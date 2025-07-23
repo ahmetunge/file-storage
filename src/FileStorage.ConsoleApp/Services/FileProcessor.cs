@@ -167,7 +167,7 @@ public class FileProcessor : IFileProcessor
             }
         }
 
-        _logger.LogInformation("File reassembled at: {OutputFilePath}", outputFilePath);
+        _logger.LogInformation("File restored at: {OutputFilePath}", outputFilePath);
 
         byte[] fileBytes = await File.ReadAllBytesAsync(outputFilePath);
 
@@ -179,7 +179,7 @@ public class FileProcessor : IFileProcessor
         }
         else
         {
-            _logger.LogError("Checksum MISMATCH. Original: {OriginalChecksum}, Reassembled: {NewChecksum}. [FAILURE]",
+            _logger.LogError("Checksum MISMATCH. Original: {OriginalChecksum}, restored: {NewChecksum}. [FAILURE]",
                 fileMetadata.Checksum, newChecksum);
         }
 
