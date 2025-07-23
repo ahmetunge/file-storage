@@ -11,4 +11,6 @@ public interface IFileProcessor
     Task<string> RestoreFile(Guid fileId, string outputDirectory);
 
     Task<List<FileMetadata>> GetAllFiles();
+    
+    Task<FileMetadata?> GetFileMetadataAsync(Guid fileId);
 }

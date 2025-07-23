@@ -187,7 +187,44 @@ public class ConsoleRunner
 
     private async Task ShowFileDetailsAsync()
     {
-      
+      Console.Write("Enter File ID: ");
+        var fileIdInput = Console.ReadLine();
+        
+        if (!Guid.TryParse(fileIdInput, out var fileId))
+        {
+            Console.WriteLine("Invalid File ID format.");
+            return;
+        }
+        
+        var fileMetadata = await _fileProcessor.GetFileMetadataAsync(fileId);
+        if (fileMetadata == null)
+        {
+            Console.WriteLine("File not found.");
+            return;
+        }
+        
+        Console.WriteLine($"\nFile Details:");
+        Console.WriteLine($"ID: {fileMetadata.Id}");
+        Console.WriteLine($"File Name: {fileMetadata.FileName}");
+        Console.WriteLine($"Original Path: {fileMetadata.FilePath}");
+        Console.WriteLine($"File Size: {FormatFileSize(fileMetadata.FileSize)}");
+        Console.WriteLine($"Checksum: {fileMetadata.Checksum}");
+        Console.WriteLine($"Created: {fileMetadata.CreatedAt}");
+        
+        if (fileMetadata.Chunks?.Any() == true)
+        {
+            Console.WriteLine($"\nChunk Details:");
+            Console.WriteLine(new string('-', 100));
+            Console.WriteLine($"{"Index",-6} {"Size",-15} {"Provider",-15} {"Checksum",-20} {"Created"}");
+            Console.WriteLine(new string('-', 100));
+        
+            foreach (var chunk in fileMetadata.Chunks.OrderBy(c => c.Order))
+            {
+                var chunkSizeText = FormatFileSize(chunk.ChunkSize);
+                Console.WriteLine($"{chunkSizeText,-15} {chunk.CreatedAt:yyyy-MM-dd HH:mm}");
+            }
+            Console.WriteLine(new string('-', 100));
+        }
     }
     
     private static string FormatFileSize(long bytes)
