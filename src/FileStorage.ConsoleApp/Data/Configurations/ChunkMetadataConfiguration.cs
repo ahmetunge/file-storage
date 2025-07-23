@@ -41,6 +41,6 @@ public class ChunkMetadataConfiguration: IEntityTypeConfiguration<ChunkMetadata>
 
         builder.HasQueryFilter(x => !x.IsDeleted);
         
-        builder.HasIndex(e => new { FileId = e.FileMetadataId }).IsUnique();
+        builder.HasIndex(e => new { FileId = e.FileMetadataId });
     }
 }

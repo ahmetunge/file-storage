@@ -42,9 +42,6 @@ public class ConsoleRunner
                         await ListAllFilesAsync();
                         break;
                     case "5":
-                        await DeleteFileAsync();
-                        break;
-                    case "6":
                         await ShowFileDetailsAsync();
                         break;
                     case "0":
@@ -74,8 +71,7 @@ public class ConsoleRunner
         Console.WriteLine("2. Process Multiple Files");
         Console.WriteLine("3. Restore File");
         Console.WriteLine("4. List All Files");
-        Console.WriteLine("5. Delete File");
-        Console.WriteLine("6. Show File Details");
+        Console.WriteLine("5. Show File Details");
         Console.WriteLine("0. Exit");
         Console.Write("\nEnter your choice: ");
     }
