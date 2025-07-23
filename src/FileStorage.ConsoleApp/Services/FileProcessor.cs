@@ -192,4 +192,11 @@ public class FileProcessor : IFileProcessor
         
         return files;
     }
+
+    public async Task<FileMetadata?> GetFileMetadataAsync(Guid fileId)
+    {
+        var file = await _fileStorageDbContext.FileMetadata.AsTracking().FirstOrDefaultAsync(f => f.Id == fileId);
+
+        return file;
+    }
 }
