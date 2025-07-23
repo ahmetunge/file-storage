@@ -1,5 +1,8 @@
 <Solution>
   <Folder Name="/src/">
-    <Project Path="src\FileStorage.ConsoleApp\FileStorage.ConsoleApp.csproj" Type="Classic C#" />
+    <Project Path="src\FileStorage.ConsoleApp\FileStorage.ConsoleApp.csproj" />
+  </Folder>
+  <Folder Name="/tests/" Id="0c88dd14-f956-ce84-757c-a364ccf449fc">
+    <Project Path="tests/FileStorage.Tests/FileStorage.Tests.csproj" Id="ac19aa31-293f-491b-98c8-93b8daf0aef6" />
   </Folder>
 </Solution>
