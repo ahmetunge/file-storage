@@ -1,10 +1,14 @@
+using FileStorage.ConsoleApp.Data.Entities;
+
 namespace FileStorage.ConsoleApp.Services;
 
 public interface IFileProcessor
 {
-    Task<Guid> ProcessFileAsync(string filePath);
+    Task<Guid> ProcessFile(string filePath);
     
-    Task<List<Guid>> ProcessFolderAsync(string folderPath);
+    Task<List<Guid>> ProcessFolder(string folderPath);
 
     Task<string> RestoreFile(Guid fileId, string outputDirectory);
+
+    Task<List<FileMetadata>> GetAllFiles();
 }

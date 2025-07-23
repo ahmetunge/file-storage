@@ -94,7 +94,7 @@ public class ConsoleRunner
         Console.WriteLine($"Processing file: {filePath}");
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
-        var fileId = await _fileProcessor.ProcessFileAsync(filePath);
+        var fileId = await _fileProcessor.ProcessFile(filePath);
 
         stopwatch.Stop();
         Console.WriteLine($"File processed successfully!");
@@ -115,7 +115,7 @@ public class ConsoleRunner
         
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         
-        var processedGuids = await _fileProcessor.ProcessFolderAsync(directoryPath);
+        var processedGuids = await _fileProcessor.ProcessFolder(directoryPath);
         
         stopwatch.Stop();
        
@@ -157,7 +157,27 @@ public class ConsoleRunner
 
     private async Task ListAllFilesAsync()
     {
-      
+        Console.WriteLine("Loading files...");
+        var files = await _fileProcessor.GetAllFiles();
+        
+        if (!files.Any())
+        {
+            Console.WriteLine("No files found.");
+            return;
+        }
+        
+        Console.WriteLine($"\nFound {files.Count} files:");
+        Console.WriteLine(new string('-', 120));
+        Console.WriteLine($"{"ID",-38} {"File Name",-30} {"Size",-15}  {"CreatedAt4"}");
+        Console.WriteLine(new string('-', 120));
+        
+        foreach (var file in files)
+        {
+            var sizeText = FormatFileSize(file.FileSize);
+            Console.WriteLine($"{file.Id,-38} {TruncateString(file.FileName, 28),-30} {sizeText,-15}  {file.CreatedAt:yyyy-MM-dd HH:mm}");
+        }
+        
+        Console.WriteLine(new string('-', 120));
     }
 
     private async Task DeleteFileAsync()
@@ -168,5 +188,27 @@ public class ConsoleRunner
     private async Task ShowFileDetailsAsync()
     {
       
+    }
+    
+    private static string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB", "TB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+
+        return $"{len:0.##} {sizes[order]}";
+    }
+    
+    private static string TruncateString(string input, int maxLength)
+    {
+        if (string.IsNullOrEmpty(input) || input.Length <= maxLength)
+            return input;
+
+        return input[..(maxLength - 3)] + "...";
     }
 }

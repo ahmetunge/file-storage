@@ -27,7 +27,7 @@ public class FileProcessor : IFileProcessor
     }
 
 
-    public async Task<Guid> ProcessFileAsync(string filePath)
+    public async Task<Guid> ProcessFile(string filePath)
     {
         var fileInfo = new FileInfo(filePath);
 
@@ -99,7 +99,7 @@ public class FileProcessor : IFileProcessor
         return fileMetadataId;
     }
 
-    public async Task<List<Guid>> ProcessFolderAsync(string folderPath)
+    public async Task<List<Guid>> ProcessFolder(string folderPath)
     {
         var files = Directory.GetFiles(folderPath, "*", SearchOption.TopDirectoryOnly);
 
@@ -115,7 +115,7 @@ public class FileProcessor : IFileProcessor
         {
             try
             {
-                var id = await ProcessFileAsync(file);
+                var id = await ProcessFile(file);
 
                 fileGuids.Add(id);
             }
@@ -184,5 +184,12 @@ public class FileProcessor : IFileProcessor
         }
 
         return outputFilePath;
+    }
+
+    public async Task<List<FileMetadata>> GetAllFiles()
+    {
+        var files =await _fileStorageDbContext.FileMetadata.AsTracking().ToListAsync();
+        
+        return files;
     }
 }
