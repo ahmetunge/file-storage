@@ -5,15 +5,9 @@ namespace FileStorage.ConsoleApp.Services;
 
 public class ChunkingService : IChunkingService
 {
-    private readonly ILogger<ChunkingService> _logger;
     private const int MinChunkSize = 20 * 1024;
     private const int MaxChunkSize = 200 * 1024;
-
-    public ChunkingService(ILogger<ChunkingService> logger)
-    {
-        _logger = logger;
-    }
-
+    
     public async Task<List<byte[]>> ChunkFile(Stream stream, long fileSize)
     {
         var allChunks = new List<byte[]>();

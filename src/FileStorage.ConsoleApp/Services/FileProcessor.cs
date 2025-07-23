@@ -33,7 +33,9 @@ public class FileProcessor : IFileProcessor
 
         if (!fileInfo.Exists)
         {
-            throw new FileNotFoundException();
+            _logger.LogError("File not found");
+
+            return Guid.Empty;
         }
 
         _logger.LogInformation("Starting to process file: {FileName}", fileInfo.Name);
@@ -64,6 +66,13 @@ public class FileProcessor : IFileProcessor
         await using var fileStream = fileInfo.OpenRead();
 
         var chunks = await _chunkingService.ChunkFile(fileStream, fileInfo.Length);
+
+        if (chunks is null || chunks.Count == 0)
+        {
+            _logger.LogError("An error while chunk files");
+
+            return Guid.Empty;
+        }
 
         var storageProvidersList = _storageProviders.ToList();
 
@@ -142,6 +151,7 @@ public class FileProcessor : IFileProcessor
         }
 
         _logger.LogInformation("Starting to restore file: {FileName}", fileMetadata.FileName);
+
         Directory.CreateDirectory(outputDirectory);
         var outputFilePath = Path.Combine(outputDirectory, $"Restored_{fileMetadata.FileName}");
 
@@ -157,8 +167,8 @@ public class FileProcessor : IFileProcessor
                         chunkMetadata.StorageProviderType, chunkMetadata.Id);
                     outputFileStream.Close();
                     File.Delete(outputFilePath);
-                    throw new Exception(
-                        $"Storage provider {chunkMetadata.StorageProviderType} not found for chunk {chunkMetadata.Id}");
+
+                    return string.Empty;
                 }
 
                 var chunkData = await storageProvider.ReadChunkAsync(chunkMetadata.Id.ToString());
@@ -188,8 +198,8 @@ public class FileProcessor : IFileProcessor
 
     public async Task<List<FileMetadata>> GetAllFiles()
     {
-        var files =await _fileStorageDbContext.FileMetadata.AsTracking().ToListAsync();
-        
+        var files = await _fileStorageDbContext.FileMetadata.AsTracking().ToListAsync();
+
         return files;
     }
 
