@@ -104,7 +104,24 @@ public class ConsoleRunner
 
     private async Task ProcessMultipleFilesAsync()
     {
+        Console.Write("Enter folder path: ");
+        var directoryPath = Console.ReadLine();
+        
+        if (string.IsNullOrWhiteSpace(directoryPath) || !Directory.Exists(directoryPath))
+        {
+            Console.WriteLine("Directory not found or invalid path.");
+            return;
+        }
+        
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        
+        var processedGuids = await _fileProcessor.ProcessFolderAsync(directoryPath);
+        
+        stopwatch.Stop();
        
+        Console.WriteLine($"\nProcessing completed:");
+        Console.WriteLine(string.Join(", ", processedGuids));
+        Console.WriteLine($"Total processing time: {stopwatch.ElapsedMilliseconds} ms");
     }
 
     private async Task RestoreFileAsync()

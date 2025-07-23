@@ -99,7 +99,36 @@ public class FileProcessor : IFileProcessor
         return fileMetadataId;
     }
 
- public async Task<string> RestoreFile(Guid fileId, string outputDirectory)
+    public async Task<List<Guid>> ProcessFolderAsync(string folderPath)
+    {
+        var files = Directory.GetFiles(folderPath, "*", SearchOption.TopDirectoryOnly);
+
+        if (files.Length == 0)
+        {
+            _logger.LogError("No files found in folder: {FolderPath}", folderPath);
+            return new List<Guid>();
+        }
+
+        List<Guid> fileGuids = new List<Guid>();
+
+        foreach (var file in files)
+        {
+            try
+            {
+                var id = await ProcessFileAsync(file);
+
+                fileGuids.Add(id);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error processing file: {FileName}", file);
+            }
+        }
+
+        return fileGuids;
+    }
+
+    public async Task<string> RestoreFile(Guid fileId, string outputDirectory)
     {
         var fileMetadata = await _fileStorageDbContext.FileMetadata
             .Include(f => f.Chunks!.OrderBy(c => c.Order))
@@ -109,7 +138,7 @@ public class FileProcessor : IFileProcessor
         {
             _logger.LogError("File with ID {FileId} not found in metadata.", fileId);
 
-            throw new Exception("File not found");
+            return string.Empty;
         }
 
         _logger.LogInformation("Starting to restore file: {FileName}", fileMetadata.FileName);
@@ -120,36 +149,40 @@ public class FileProcessor : IFileProcessor
         {
             foreach (var chunkMetadata in fileMetadata!.Chunks)
             {
-                var storageProvider = _storageProviders.FirstOrDefault(p => p.ProviderType == chunkMetadata.StorageProviderType);
+                var storageProvider =
+                    _storageProviders.FirstOrDefault(p => p.ProviderType == chunkMetadata.StorageProviderType);
                 if (storageProvider == null)
                 {
-                    _logger.LogError("Storage provider {ProviderType} not found for chunk {ChunkId}", chunkMetadata.StorageProviderType, chunkMetadata.Id);
+                    _logger.LogError("Storage provider {ProviderType} not found for chunk {ChunkId}",
+                        chunkMetadata.StorageProviderType, chunkMetadata.Id);
                     outputFileStream.Close();
                     File.Delete(outputFilePath);
-                    throw new Exception($"Storage provider {chunkMetadata.StorageProviderType} not found for chunk {chunkMetadata.Id}");
+                    throw new Exception(
+                        $"Storage provider {chunkMetadata.StorageProviderType} not found for chunk {chunkMetadata.Id}");
                 }
 
                 var chunkData = await storageProvider.ReadChunkAsync(chunkMetadata.Id.ToString());
-                
+
                 await outputFileStream.WriteAsync(chunkData, 0, chunkData.Length);
             }
         }
 
         _logger.LogInformation("File reassembled at: {OutputFilePath}", outputFilePath);
-        
+
         byte[] fileBytes = await File.ReadAllBytesAsync(outputFilePath);
 
         var newChecksum = fileBytes.ComputeChecksum();
-        
+
         if (newChecksum == fileMetadata.Checksum)
         {
             _logger.LogInformation("Checksum VERIFIED. File integrity is confirmed. [SUCCESS]");
         }
         else
         {
-            _logger.LogError("Checksum MISMATCH. Original: {OriginalChecksum}, Reassembled: {NewChecksum}. [FAILURE]", fileMetadata.Checksum, newChecksum);
+            _logger.LogError("Checksum MISMATCH. Original: {OriginalChecksum}, Reassembled: {NewChecksum}. [FAILURE]",
+                fileMetadata.Checksum, newChecksum);
         }
-        
+
         return outputFilePath;
     }
 }
