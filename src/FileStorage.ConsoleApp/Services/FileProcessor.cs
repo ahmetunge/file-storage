@@ -2,6 +2,7 @@ using FileStorage.ConsoleApp.Data;
 using FileStorage.ConsoleApp.Data.Entities;
 using FileStorage.ConsoleApp.Extensions;
 using FileStorage.ConsoleApp.Providers;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace FileStorage.ConsoleApp.Services;
@@ -96,5 +97,59 @@ public class FileProcessor : IFileProcessor
         _logger.LogInformation("Successfully processed and stored all chunks for file: {FileName}", fileInfo.Name);
 
         return fileMetadataId;
+    }
+
+ public async Task<string> RestoreFile(Guid fileId, string outputDirectory)
+    {
+        var fileMetadata = await _fileStorageDbContext.FileMetadata
+            .Include(f => f.Chunks!.OrderBy(c => c.Order))
+            .FirstOrDefaultAsync(f => f.Id == fileId);
+
+        if (fileMetadata == null)
+        {
+            _logger.LogError("File with ID {FileId} not found in metadata.", fileId);
+
+            throw new Exception("File not found");
+        }
+
+        _logger.LogInformation("Starting to restore file: {FileName}", fileMetadata.FileName);
+        Directory.CreateDirectory(outputDirectory);
+        var outputFilePath = Path.Combine(outputDirectory, $"Restored_{fileMetadata.FileName}");
+
+        await using (var outputFileStream = new FileStream(outputFilePath, FileMode.Create))
+        {
+            foreach (var chunkMetadata in fileMetadata!.Chunks)
+            {
+                var storageProvider = _storageProviders.FirstOrDefault(p => p.ProviderType == chunkMetadata.StorageProviderType);
+                if (storageProvider == null)
+                {
+                    _logger.LogError("Storage provider {ProviderType} not found for chunk {ChunkId}", chunkMetadata.StorageProviderType, chunkMetadata.Id);
+                    outputFileStream.Close();
+                    File.Delete(outputFilePath);
+                    throw new Exception($"Storage provider {chunkMetadata.StorageProviderType} not found for chunk {chunkMetadata.Id}");
+                }
+
+                var chunkData = await storageProvider.ReadChunkAsync(chunkMetadata.Id.ToString());
+                
+                await outputFileStream.WriteAsync(chunkData, 0, chunkData.Length);
+            }
+        }
+
+        _logger.LogInformation("File reassembled at: {OutputFilePath}", outputFilePath);
+        
+        byte[] fileBytes = await File.ReadAllBytesAsync(outputFilePath);
+
+        var newChecksum = fileBytes.ComputeChecksum();
+        
+        if (newChecksum == fileMetadata.Checksum)
+        {
+            _logger.LogInformation("Checksum VERIFIED. File integrity is confirmed. [SUCCESS]");
+        }
+        else
+        {
+            _logger.LogError("Checksum MISMATCH. Original: {OriginalChecksum}, Reassembled: {NewChecksum}. [FAILURE]", fileMetadata.Checksum, newChecksum);
+        }
+        
+        return outputFilePath;
     }
 }

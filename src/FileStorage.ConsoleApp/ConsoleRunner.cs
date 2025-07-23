@@ -109,7 +109,33 @@ public class ConsoleRunner
 
     private async Task RestoreFileAsync()
     {
-     
+        Console.Write("Enter File ID: ");
+        var fileIdInput = Console.ReadLine();
+        
+        if (!Guid.TryParse(fileIdInput, out var fileId))
+        {
+            Console.WriteLine("Invalid File ID format.");
+            return;
+        }
+        
+        Console.Write("Enter output directory: ");
+        var outputDirectory = Console.ReadLine();
+        
+        if (string.IsNullOrWhiteSpace(outputDirectory))
+            outputDirectory = AppDomain.CurrentDomain.BaseDirectory;
+        
+        if (!Directory.Exists(outputDirectory))
+            Directory.CreateDirectory(outputDirectory);
+        
+        Console.WriteLine($"Restoring file: {fileId}");
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        
+        var restoredPath = await _fileProcessor.RestoreFile(fileId, outputDirectory);
+        
+        stopwatch.Stop();
+        Console.WriteLine($"File restored successfully!");
+        Console.WriteLine($"Restored to: {restoredPath}");
+        Console.WriteLine($"Restoration time: {stopwatch.ElapsedMilliseconds} ms");
     }
 
     private async Task ListAllFilesAsync()
