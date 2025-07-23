@@ -58,8 +58,7 @@ namespace FileStorage.ConsoleApp.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("FileMetadataId")
-                        .IsUnique();
+                    b.HasIndex("FileMetadataId");
 
                     b.ToTable("ChunkMetadata", (string)null);
                 });

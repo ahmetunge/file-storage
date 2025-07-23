@@ -21,10 +21,7 @@
     </ItemGroup>
     
     <ItemGroup>
-      <None Update="TestFiles\sample.pdf">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="TestFiles\Senior Software Developer Case Study.pdf">
+      <None Update="TestFiles\less-than-1-mb.pdf">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
     </ItemGroup>
