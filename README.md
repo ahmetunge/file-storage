@@ -48,7 +48,8 @@ Bu proje, büyük dosyaların otomatik olarak küçük parçalara (chunk) ayrıl
 
 4. **Test dosyaları:**  
    `TestFiles` klasöründe örnek PDF dosyaları mevcuttur. Uygulama çalışırken bu dosyalar ile test edebilirsiniz.
-
+> **Not:** Uygulamanın test edilmesini kolaylaştırmak amacıyla, dosya parçalama (chunking) boyutu `AppConstants` içerisinde bilinçli olarak **küçük bir değerde** ayarlanmıştır. Bu sayede, `TestFiles` klasöründeki küçük dosyalarla bile sistemin bir dosyayı birden çok parçaya ayırma ve farklı sağlayıcılara dağıtma mantığını rahatça gözlemleyebilirsiniz.
+   
 > **Not:** Uygulama ilk çalıştırıldığında, SQLite veritabanı ve gerekli tablolar otomatik olarak oluşturulacaktır. Ekstra bir kurulum adımı gerektirmez.
 
 ### Testler
