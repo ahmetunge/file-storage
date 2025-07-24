@@ -76,14 +76,18 @@ public class FileProcessor : IFileProcessor
 
         var storageProvidersList = _storageProviders.ToList();
 
+        var chunkSaveTasks = new List<Task>();
+        var chunkMetadatas = new List<ChunkMetadata>();
+
         for (int i = 0; i < chunks.Count; i++)
         {
             var chunk = chunks[i];
             var storageProvider = storageProvidersList[i % storageProvidersList.Count];
-
             var chunkId = Guid.NewGuid();
 
-            await storageProvider.SaveChunk(chunkId.ToString(), chunk);
+
+            var saveTask = storageProvider.SaveChunk(chunkId.ToString(), chunk);
+            chunkSaveTasks.Add(saveTask);
 
             var chunkMetadata = new ChunkMetadata
             {
@@ -97,7 +101,13 @@ public class FileProcessor : IFileProcessor
                 CreatedBy = nameof(FileProcessor),
                 UpdatedBy = nameof(FileProcessor),
             };
+            chunkMetadatas.Add(chunkMetadata);
+        }
 
+        await Task.WhenAll(chunkSaveTasks);
+
+        foreach (var chunkMetadata in chunkMetadatas)
+        {
             _fileStorageDbContext.ChunkMetadata.Add(chunkMetadata);
         }
 
@@ -150,7 +160,7 @@ public class FileProcessor : IFileProcessor
             return string.Empty;
         }
 
-        if (fileMetadata.Chunks is null || fileMetadata.Chunks.Count==0)
+        if (fileMetadata.Chunks is null || fileMetadata.Chunks.Count == 0)
         {
             _logger.LogError("File with chunks mot exists. {FileId}", fileId);
 
@@ -205,6 +215,7 @@ public class FileProcessor : IFileProcessor
 
         return outputFilePath;
     }
+
 
     public async Task<List<FileMetadata>> GetAllFiles()
     {
