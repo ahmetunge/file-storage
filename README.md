@@ -49,6 +49,8 @@ Bu proje, büyük dosyaların otomatik olarak küçük parçalara (chunk) ayrıl
 4. **Test dosyaları:**  
    `TestFiles` klasöründe örnek PDF dosyaları mevcuttur. Uygulama çalışırken bu dosyalar ile test edebilirsiniz.
 
+> **Not:** Uygulama ilk çalıştırıldığında, SQLite veritabanı ve gerekli tablolar otomatik olarak oluşturulacaktır. Ekstra bir kurulum adımı gerektirmez.
+
 ### Testler
 
 Tüm ana fonksiyonellikler için unit testler yazılmıştır. Testleri çalıştırmak için:
