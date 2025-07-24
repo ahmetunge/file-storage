@@ -102,19 +102,19 @@ public class ConsoleRunner
     {
         Console.Write("Enter folder path: ");
         var directoryPath = Console.ReadLine();
-        
+
         if (string.IsNullOrWhiteSpace(directoryPath) || !Directory.Exists(directoryPath))
         {
             Console.WriteLine("Directory not found or invalid path.");
             return;
         }
-        
+
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        
+
         var processedGuids = await _fileProcessor.ProcessFolder(directoryPath);
-        
+
         stopwatch.Stop();
-       
+
         Console.WriteLine($"\nProcessing completed:");
         Console.WriteLine(string.Join(", ", processedGuids));
         Console.WriteLine($"Total processing time: {stopwatch.ElapsedMilliseconds} ms");
@@ -124,27 +124,27 @@ public class ConsoleRunner
     {
         Console.Write("Enter File ID: ");
         var fileIdInput = Console.ReadLine();
-        
+
         if (!Guid.TryParse(fileIdInput, out var fileId))
         {
             Console.WriteLine("Invalid File ID format.");
             return;
         }
-        
+
         Console.Write("Enter output directory: ");
         var outputDirectory = Console.ReadLine();
-        
+
         if (string.IsNullOrWhiteSpace(outputDirectory))
             outputDirectory = AppDomain.CurrentDomain.BaseDirectory;
-        
+
         if (!Directory.Exists(outputDirectory))
             Directory.CreateDirectory(outputDirectory);
-        
+
         Console.WriteLine($"Restoring file: {fileId}");
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        
+
         var restoredPath = await _fileProcessor.RestoreFile(fileId, outputDirectory);
-        
+
         stopwatch.Stop();
         Console.WriteLine($"File restored successfully!");
         Console.WriteLine($"Restored to: {restoredPath}");
@@ -155,50 +155,45 @@ public class ConsoleRunner
     {
         Console.WriteLine("Loading files...");
         var files = await _fileProcessor.GetAllFiles();
-        
+
         if (!files.Any())
         {
             Console.WriteLine("No files found.");
             return;
         }
-        
+
         Console.WriteLine($"\nFound {files.Count} files:");
         Console.WriteLine(new string('-', 120));
         Console.WriteLine($"{"ID",-38} {"File Name",-30} {"Size",-15}  {"CreatedAt4"}");
         Console.WriteLine(new string('-', 120));
-        
+
         foreach (var file in files)
         {
             var sizeText = FormatFileSize(file.FileSize);
             Console.WriteLine($"{file.Id,-38} {TruncateString(file.FileName, 28),-30} {sizeText,-15}  {file.CreatedAt:yyyy-MM-dd HH:mm}");
         }
-        
-        Console.WriteLine(new string('-', 120));
-    }
 
-    private async Task DeleteFileAsync()
-    {
-       
+        Console.WriteLine(new string('-', 120));
     }
 
     private async Task ShowFileDetailsAsync()
     {
-      Console.Write("Enter File ID: ");
+        Console.Write("Enter File ID: ");
         var fileIdInput = Console.ReadLine();
-        
+
         if (!Guid.TryParse(fileIdInput, out var fileId))
         {
             Console.WriteLine("Invalid File ID format.");
             return;
         }
-        
+
         var fileMetadata = await _fileProcessor.GetFileMetadataAsync(fileId);
         if (fileMetadata == null)
         {
             Console.WriteLine("File not found.");
             return;
         }
-        
+
         Console.WriteLine($"\nFile Details:");
         Console.WriteLine($"ID: {fileMetadata.Id}");
         Console.WriteLine($"File Name: {fileMetadata.FileName}");
@@ -206,14 +201,14 @@ public class ConsoleRunner
         Console.WriteLine($"File Size: {FormatFileSize(fileMetadata.FileSize)}");
         Console.WriteLine($"Checksum: {fileMetadata.Checksum}");
         Console.WriteLine($"Created: {fileMetadata.CreatedAt}");
-        
+
         if (fileMetadata.Chunks?.Any() == true)
         {
             Console.WriteLine($"\nChunk Details:");
             Console.WriteLine(new string('-', 100));
             Console.WriteLine($"{"Index",-6} {"Size",-15} {"Provider",-15} {"Checksum",-20} {"Created"}");
             Console.WriteLine(new string('-', 100));
-        
+
             foreach (var chunk in fileMetadata.Chunks.OrderBy(c => c.Order))
             {
                 var chunkSizeText = FormatFileSize(chunk.ChunkSize);
@@ -222,7 +217,7 @@ public class ConsoleRunner
             Console.WriteLine(new string('-', 100));
         }
     }
-    
+
     private static string FormatFileSize(long bytes)
     {
         string[] sizes = { "B", "KB", "MB", "GB", "TB" };
@@ -236,7 +231,7 @@ public class ConsoleRunner
 
         return $"{len:0.##} {sizes[order]}";
     }
-    
+
     private static string TruncateString(string input, int maxLength)
     {
         if (string.IsNullOrEmpty(input) || input.Length <= maxLength)
