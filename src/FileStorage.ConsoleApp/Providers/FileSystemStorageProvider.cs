@@ -12,7 +12,6 @@ public class FileSystemStorageProvider: IStorageProvider
     {
         _logger = logger;
         Directory.CreateDirectory(AppConstants.FileStoragePath);
-        
         _logger.LogInformation("Chunks path: {ChunksPath}", AppConstants.FileStoragePath);
     }
     
