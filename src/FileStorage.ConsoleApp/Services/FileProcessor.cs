@@ -150,6 +150,13 @@ public class FileProcessor : IFileProcessor
             return string.Empty;
         }
 
+        if (fileMetadata.Chunks is null || fileMetadata.Chunks.Count==0)
+        {
+            _logger.LogError("File with chunks mot exists. {FileId}", fileId);
+
+            return string.Empty;
+        }
+
         _logger.LogInformation("Starting to restore file: {FileName}", fileMetadata.FileName);
 
         Directory.CreateDirectory(outputDirectory);
@@ -157,15 +164,18 @@ public class FileProcessor : IFileProcessor
 
         await using (var outputFileStream = new FileStream(outputFilePath, FileMode.Create))
         {
-            foreach (var chunkMetadata in fileMetadata!.Chunks)
+            foreach (var chunkMetadata in fileMetadata.Chunks)
             {
                 var storageProvider =
                     _storageProviders.FirstOrDefault(p => p.ProviderType == chunkMetadata.StorageProviderType);
+
                 if (storageProvider == null)
                 {
                     _logger.LogError("Storage provider {ProviderType} not found for chunk {ChunkId}",
                         chunkMetadata.StorageProviderType, chunkMetadata.Id);
+
                     outputFileStream.Close();
+
                     File.Delete(outputFilePath);
 
                     return string.Empty;

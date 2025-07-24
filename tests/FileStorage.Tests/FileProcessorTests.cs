@@ -337,8 +337,8 @@ namespace FileStorage.Tests
                 _mockChunkingService.Object
             );
 
-           
-            var result = await fileProcessor.RestoreFile(fileId,_testOutputDirectory);
+
+            var result = await fileProcessor.RestoreFile(fileId, _testOutputDirectory);
 
             // Assert
             Assert.NotEmpty(result);
@@ -436,11 +436,307 @@ namespace FileStorage.Tests
                Times.Once);
         }
 
+        [Fact]
+        public async Task RestoreFile_ShouldReturnStrinEmpty_WhenProviderNotFound()
+        {
+            // Arrange
+            var fileId = Guid.NewGuid();
+            var chunkId = Guid.NewGuid();
+            var fileName = "test.txt";
+            var chunkData = Encoding.UTF8.GetBytes("Hello World");
+            var checksum = chunkData.ComputeChecksum();
+
+            var createdAt = DateTime.UtcNow.AddDays(-1);
+            var createdBy = "faker.user";
+
+            var chunkFaker = new Faker<ChunkMetadata>()
+                .RuleFor(c => c.Id, f => Guid.NewGuid())
+                .RuleFor(c => c.FileMetadataId, _ => fileId)
+                .RuleFor(c => c.ChunkSize, f => f.Random.Long(512 * 1024, 2 * 1024 * 1024))
+                .RuleFor(c => c.Order, f => f.IndexFaker + 1)
+                .RuleFor(c => c.StorageProviderType, "MissingProvider")
+                .RuleFor(c => c.CreatedAt, _ => createdAt)
+                .RuleFor(c => c.UpdatedAt, _ => createdAt.AddMinutes(10))
+                .RuleFor(c => c.CreatedBy, _ => createdBy)
+                .RuleFor(c => c.UpdatedBy, _ => createdBy)
+                .RuleFor(c => c.IsDeleted, f => f.Random.Bool(0.05f))
+                .RuleFor(c => c.File, _ => null);
+
+            var fakeChunk = chunkFaker.Generate();
+
+            var fileFaker = new Faker<FileMetadata>()
+                .RuleFor(f => f.Id, _ => fileId)
+                .RuleFor(f => f.FileName, f => f.System.FileName())
+                .RuleFor(f => f.FilePath, f => f.System.FilePath())
+                .RuleFor(f => f.FileSize, f => f.Random.Long(5 * 1024 * 1024, 100 * 1024 * 1024))
+                .RuleFor(f => f.Checksum, f => f.Random.Hash())
+                .RuleFor(f => f.CreatedAt, _ => createdAt)
+                .RuleFor(f => f.UpdatedAt, _ => createdAt.AddMinutes(10))
+                .RuleFor(f => f.CreatedBy, _ => createdBy)
+                .RuleFor(f => f.UpdatedBy, _ => createdBy)
+                .RuleFor(f => f.IsDeleted, f => f.Random.Bool(0.1f))
+                .RuleFor(f => f.Chunks, f => new List<ChunkMetadata> { fakeChunk });
+
+            var fakeFile = fileFaker.Generate();
+
+            var options = new DbContextOptionsBuilder<FileStorageDbContext>()
+                    .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+                    .Options;
+
+            _dbContext = new FileStorageDbContext(options);
+
+            _dbContext.FileMetadata.Add(fakeFile);
+            await _dbContext.SaveChangesAsync();
+
+            _mockStorageProvider.Setup(x => x.ReadChunkAsync(chunkId.ToString()))
+                .ReturnsAsync(chunkData);
+
+            // Act
+            var fileProcessor = new FileProcessor(
+                _mockLogger.Object,
+                _dbContext,
+                _storageProviders,
+                _mockChunkingService.Object
+            );
+
+
+            var result = await fileProcessor.RestoreFile(fileId, _testOutputDirectory);
+
+            // Assert
+
+            Assert.Empty(result);
+            _mockLogger.Verify(
+               log => log.Log(
+                   LogLevel.Error,
+                   It.IsAny<EventId>(),
+                   It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Storage provider")),
+                   null,
+                   It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+               Times.Once);
+        }
+
+        [Fact]
+        public async Task RestoreFile_ShouldDeleteFile_WhenProviderNotExists()
+        {
+            // Arrange
+            var fileId = Guid.NewGuid();
+            var chunkId = Guid.NewGuid();
+            var fileName = "test.txt";
+            var chunkData = Encoding.UTF8.GetBytes("Hello World");
+            var checksum = chunkData.ComputeChecksum();
+
+            var createdAt = DateTime.UtcNow.AddDays(-1);
+            var createdBy = "faker.user";
+
+            var chunkFaker = new Faker<ChunkMetadata>()
+                .RuleFor(c => c.Id, f => Guid.NewGuid())
+                .RuleFor(c => c.FileMetadataId, _ => fileId)
+                .RuleFor(c => c.ChunkSize, f => f.Random.Long(512 * 1024, 2 * 1024 * 1024))
+                .RuleFor(c => c.Order, f => f.IndexFaker + 1)
+                .RuleFor(c => c.StorageProviderType, "MissingProvider")
+                .RuleFor(c => c.CreatedAt, _ => createdAt)
+                .RuleFor(c => c.UpdatedAt, _ => createdAt.AddMinutes(10))
+                .RuleFor(c => c.CreatedBy, _ => createdBy)
+                .RuleFor(c => c.UpdatedBy, _ => createdBy)
+                .RuleFor(c => c.IsDeleted, f => f.Random.Bool(0.05f))
+                .RuleFor(c => c.File, _ => null);
+
+            var fakeChunk = chunkFaker.Generate();
+
+            var fileFaker = new Faker<FileMetadata>()
+                .RuleFor(f => f.Id, _ => fileId)
+                .RuleFor(f => f.FileName, f => f.System.FileName())
+                .RuleFor(f => f.FilePath, f => f.System.FilePath())
+                .RuleFor(f => f.FileSize, f => f.Random.Long(5 * 1024 * 1024, 100 * 1024 * 1024))
+                .RuleFor(f => f.Checksum, f => f.Random.Hash())
+                .RuleFor(f => f.CreatedAt, _ => createdAt)
+                .RuleFor(f => f.UpdatedAt, _ => createdAt.AddMinutes(10))
+                .RuleFor(f => f.CreatedBy, _ => createdBy)
+                .RuleFor(f => f.UpdatedBy, _ => createdBy)
+                .RuleFor(f => f.IsDeleted, f => f.Random.Bool(0.1f))
+                .RuleFor(f => f.Chunks, f => new List<ChunkMetadata> { fakeChunk });
+
+            var fakeFile = fileFaker.Generate();
+
+            var options = new DbContextOptionsBuilder<FileStorageDbContext>()
+                    .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+                    .Options;
+
+            _dbContext = new FileStorageDbContext(options);
+
+            _dbContext.FileMetadata.Add(fakeFile);
+            await _dbContext.SaveChangesAsync();
+
+            _mockStorageProvider.Setup(x => x.ReadChunkAsync(chunkId.ToString()))
+                .ReturnsAsync(chunkData);
+
+            // Act
+            var fileProcessor = new FileProcessor(
+                _mockLogger.Object,
+                _dbContext,
+                _storageProviders,
+                _mockChunkingService.Object
+            );
+
+
+            var result = await fileProcessor.RestoreFile(fileId, _testOutputDirectory);
+
+            // Assert
+
+            var expectedFilePath = Path.Combine(_testOutputDirectory, $"Restored_{fileName}");
+            Assert.False(File.Exists(expectedFilePath));
+        }
+
+        [Fact]
+        public async Task RestoreFile_CreatesOutputDirectory_IfNotExists()
+        {
+            // Arrange
+            var fileId = Guid.NewGuid();
+            var chunkId = Guid.NewGuid();
+            var fileName = "test.txt";
+            var chunkData = Encoding.UTF8.GetBytes("Hello World");
+            var checksum = chunkData.ComputeChecksum();
+
+            var createdAt = DateTime.UtcNow.AddDays(-1);
+            var createdBy = "faker.user";
+
+            var chunkFaker = new Faker<ChunkMetadata>()
+                .RuleFor(c => c.Id, f => Guid.NewGuid())
+                .RuleFor(c => c.FileMetadataId, _ => fileId)
+                .RuleFor(c => c.ChunkSize, f => f.Random.Long(512 * 1024, 2 * 1024 * 1024))
+                .RuleFor(c => c.Order, f => f.IndexFaker + 1)
+                .RuleFor(c => c.StorageProviderType, ProviderType)
+                .RuleFor(c => c.CreatedAt, _ => createdAt)
+                .RuleFor(c => c.UpdatedAt, _ => createdAt.AddMinutes(10))
+                .RuleFor(c => c.CreatedBy, _ => createdBy)
+                .RuleFor(c => c.UpdatedBy, _ => createdBy)
+                .RuleFor(c => c.IsDeleted, f => f.Random.Bool(0.05f))
+                .RuleFor(c => c.File, _ => null);
+
+            var fakeChunk = chunkFaker.Generate();
+
+            var fileFaker = new Faker<FileMetadata>()
+                .RuleFor(f => f.Id, _ => fileId)
+                .RuleFor(f => f.FileName, f => f.System.FileName())
+                .RuleFor(f => f.FilePath, f => f.System.FilePath())
+                .RuleFor(f => f.FileSize, f => f.Random.Long(5 * 1024 * 1024, 100 * 1024 * 1024))
+                .RuleFor(f => f.Checksum, f => f.Random.Hash())
+                .RuleFor(f => f.CreatedAt, _ => createdAt)
+                .RuleFor(f => f.UpdatedAt, _ => createdAt.AddMinutes(10))
+                .RuleFor(f => f.CreatedBy, _ => createdBy)
+                .RuleFor(f => f.UpdatedBy, _ => createdBy)
+                .RuleFor(f => f.IsDeleted, f => f.Random.Bool(0.1f))
+                .RuleFor(f => f.Chunks, f => new List<ChunkMetadata> { fakeChunk });
+
+            var fakeFile = fileFaker.Generate();
+
+            var options = new DbContextOptionsBuilder<FileStorageDbContext>()
+                    .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+                    .Options;
+
+            _dbContext = new FileStorageDbContext(options);
+
+            _dbContext.FileMetadata.Add(fakeFile);
+            await _dbContext.SaveChangesAsync();
+
+            _mockStorageProvider.Setup(x => x.ReadChunkAsync(chunkId.ToString()))
+                .ReturnsAsync(chunkData);
+
+            // Act
+            var fileProcessor = new FileProcessor(
+                _mockLogger.Object,
+                _dbContext,
+                _storageProviders,
+                _mockChunkingService.Object
+            );
+
+            var nonExistentDirectory = Path.Combine(_testOutputDirectory, "SubDirectory");
+
+            var result = await fileProcessor.RestoreFile(fileId, nonExistentDirectory);
+
+            // Assert
+            Assert.True(Directory.Exists(nonExistentDirectory));
+            Assert.True(File.Exists(result));
+        }
+
+        [Fact]
+        public async Task RestoreFile_ReturnEmptyString_WhenChunksNotExists()
+        {
+            // Arrange
+            var fileId = Guid.NewGuid();
+            var chunkId = Guid.NewGuid();
+            var fileName = "test.txt";
+            var chunkData = Encoding.UTF8.GetBytes("Hello World");
+            var checksum = chunkData.ComputeChecksum();
+
+            var createdAt = DateTime.UtcNow.AddDays(-1);
+            var createdBy = "faker.user";
+
+            var fileFaker = new Faker<FileMetadata>()
+                .RuleFor(f => f.Id, _ => fileId)
+                .RuleFor(f => f.FileName, f => f.System.FileName())
+                .RuleFor(f => f.FilePath, f => f.System.FilePath())
+                .RuleFor(f => f.FileSize, f => f.Random.Long(5 * 1024 * 1024, 100 * 1024 * 1024))
+                .RuleFor(f => f.Checksum, f => f.Random.Hash())
+                .RuleFor(f => f.CreatedAt, _ => createdAt)
+                .RuleFor(f => f.UpdatedAt, _ => createdAt.AddMinutes(10))
+                .RuleFor(f => f.CreatedBy, _ => createdBy)
+                .RuleFor(f => f.UpdatedBy, _ => createdBy)
+                .RuleFor(f => f.IsDeleted, f => f.Random.Bool(0.1f));
+
+            var fakeFile = fileFaker.Generate();
+
+            var options = new DbContextOptionsBuilder<FileStorageDbContext>()
+                    .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+                    .Options;
+
+            _dbContext = new FileStorageDbContext(options);
+
+            _dbContext.FileMetadata.Add(fakeFile);
+            await _dbContext.SaveChangesAsync();
+
+            _mockStorageProvider.Setup(x => x.ReadChunkAsync(chunkId.ToString()))
+                .ReturnsAsync(chunkData);
+
+            // Act
+            var fileProcessor = new FileProcessor(
+                _mockLogger.Object,
+                _dbContext,
+                _storageProviders,
+                _mockChunkingService.Object
+            );
+
+
+            var result = await fileProcessor.RestoreFile(fileId, _testOutputDirectory);
+
+            // Assert
+            Assert.Empty(result);
+            _mockLogger.Verify(
+               log => log.Log(
+                   LogLevel.Error,
+                   It.IsAny<EventId>(),
+                   It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("File with chunks mot exists")),
+                   null,
+                   It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+               Times.Once);
+        }
+
+
         public void Dispose()
         {
             if (Directory.Exists(_tempFolderPath))
             {
                 Directory.Delete(_tempFolderPath, true);
+            }
+
+            if (Directory.Exists(_tempFilePath))
+            {
+                Directory.Delete(_tempFilePath, true);
+            }
+
+            if (Directory.Exists(_testOutputDirectory))
+            {
+                Directory.Delete(_testOutputDirectory, true);
             }
         }
     }
