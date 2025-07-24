@@ -74,7 +74,7 @@ dotnet test
   Hızlı test edilebilmesi için SQLite kullanılmıştır. Dilerseniz farklı bir veritabanı ile kolayca değiştirebilirsiniz.
 
 - **Loglama:**  
-  Tüm işlemler, uygulama içinde loglanır. (ILogger veya Serilog ile genişletilebilir.)
+  Tüm işlemler, uygulama içinde loglanır. Serilog kullanıldı.
 
 - **Test Edilebilirlik:**  
   Tüm ana bileşenler interface tabanlıdır ve kolayca test edilebilir.
