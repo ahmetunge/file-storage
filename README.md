@@ -28,7 +28,7 @@ Bu proje, büyük dosyaların otomatik olarak küçük parçalara (chunk) ayrıl
 1. **Projeyi klonlayın:**
 
    ```sh
-   git clone <repo-link>
+   git clone https://github.com/ahmetunge/file-storage.git
    cd file-storage
    ```
 
@@ -76,7 +76,7 @@ dotnet test
   Hızlı test edilebilmesi için SQLite kullanılmıştır. Dilerseniz farklı bir veritabanı ile kolayca değiştirebilirsiniz.
 
 - **Loglama:**  
-  Tüm işlemler, uygulama içinde loglanır. (ILogger veya Serilog ile genişletilebilir.)
+  Tüm işlemler, uygulama içinde loglanır. Uygulamada Serilog kullanıldı.
 
 - **Test Edilebilirlik:**  
   Tüm ana bileşenler interface tabanlıdır ve kolayca test edilebilir.
@@ -95,7 +95,3 @@ Yeni storage provider’lar eklemek veya mevcut fonksiyonelliği genişletmek i�
 - `IStorageProvider` arayüzünü implemente edin.
 - Gerekli DI (Dependency Injection) ayarlarını yapın.
 - Testlerinizi ekleyin.
-
-## Lisans
-
-Bu proje, iş başvurusu case çalışması olarak geliştirilmiştir.
