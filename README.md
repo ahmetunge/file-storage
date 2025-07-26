@@ -14,6 +14,7 @@ Bu proje, büyük dosyaların otomatik olarak küçük parçalara (chunk) ayrıl
 - **Tam loglama:** Tüm işlemler (chunk’lama, saklama, birleştirme, hata vb.) loglanır.
 - **SOLID ve OOP prensipleri:** Tüm bileşenler arayüzler ile soyutlanmış, IoC container ile dışarıdan enjekte edilebilir yapıdadır.
 - **Kapsamlı unit testler:** Tüm ana fonksiyonellikler için testler mevcuttur.
+- **Parçalanmış dosylar. "\src\FileStorage.ConsoleApp\bin\Debug\net9.0\Chunks" altında tutulacaktır.
 
 ## Kurulum ve Çalıştırma
 
